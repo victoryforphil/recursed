@@ -9,13 +9,17 @@ pub(crate) mod tcp_client;
 
 #[cfg(feature = "client")]
 mod buffered_client;
+mod grpc_client;
 
+pub use grpc_client::Client as GrpcClient;
 #[cfg(feature = "client")]
 pub use {buffered_client::Client, tcp_client::ClientError};
 
+mod grpc_server;
 #[cfg(feature = "server")]
 mod server;
 
+pub use grpc_server::serve as serve_grpc;
 #[cfg(feature = "server")]
 pub use server::{serve, ServerError, ServerOptions};
 

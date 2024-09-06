@@ -168,6 +168,7 @@ fn connection_status_ui(ui: &mut egui::Ui, rx: &ReceiveSet<re_log_types::LogMsg>
                 | re_smart_channel::SmartChannelSource::Sdk
                 | re_smart_channel::SmartChannelSource::WsClient { .. }
                 | re_smart_channel::SmartChannelSource::TcpServer { .. }
+                | re_smart_channel::SmartChannelSource::GrpcServer
                 | re_smart_channel::SmartChannelSource::JsChannel { .. } => true,
             }
         })
@@ -203,7 +204,7 @@ fn connection_status_ui(ui: &mut egui::Ui, rx: &ReceiveSet<re_log_types::LogMsg>
             | SmartChannelSource::Sdk
             | SmartChannelSource::WsClient { .. } => None,
 
-            SmartChannelSource::TcpServer { .. } => {
+            SmartChannelSource::TcpServer { .. } | SmartChannelSource::GrpcServer => {
                 Some("Waiting for an SDK to connect".to_owned())
             }
         };
@@ -237,6 +238,9 @@ fn connection_status_ui(ui: &mut egui::Ui, rx: &ReceiveSet<re_log_types::LogMsg>
             }
             re_smart_channel::SmartChannelSource::TcpServer { port } => {
                 format!("Listening on TCP port {port}")
+            }
+            re_smart_channel::SmartChannelSource::GrpcServer => {
+                format!("Listning for gRPC requests")
             }
         }
     }

@@ -67,6 +67,7 @@ rerun = { workspace = true, features = [
 
 document-features.workspace = true
 mimalloc.workspace = true
+tokio = { version = "1.40.0", features = ["rt-multi-thread", "macros"] }
 
 
 [build-dependencies]

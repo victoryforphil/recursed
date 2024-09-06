@@ -136,6 +136,7 @@ pub fn open_recording(
         re_smart_channel::SmartChannelSource::Sdk => "sdk",                     // show()
         re_smart_channel::SmartChannelSource::WsClient { .. } => "ws_client",   // spawn()
         re_smart_channel::SmartChannelSource::TcpServer { .. } => "tcp_server", // connect()
+        re_smart_channel::SmartChannelSource::GrpcServer => "grpc_server",
         re_smart_channel::SmartChannelSource::Stdin => "stdin",
     });
 

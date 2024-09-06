@@ -66,6 +66,7 @@ fn loading_receivers_ui(ctx: &ViewerContext<'_>, rx: &ReceiveSet<LogMsg>, ui: &m
             | SmartChannelSource::Sdk
             | SmartChannelSource::WsClient { .. }
             | SmartChannelSource::TcpServer { .. }
+            | SmartChannelSource::GrpcServer
             | SmartChannelSource::Stdin => {
                 // These show up in the top panel - see `top_panel.rs`.
                 continue;

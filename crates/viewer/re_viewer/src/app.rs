@@ -446,6 +446,7 @@ impl App {
                     | SmartChannelSource::RrdWebEventListener
                     | SmartChannelSource::Sdk
                     | SmartChannelSource::TcpServer { .. }
+                    | SmartChannelSource::GrpcServer
                     | SmartChannelSource::Stdin => true,
                 });
             }
@@ -1308,7 +1309,7 @@ impl App {
                     return true; // We expect data soon, so fade-in
                 }
 
-                SmartChannelSource::TcpServer { .. } => {
+                SmartChannelSource::TcpServer { .. } | SmartChannelSource::GrpcServer => {
                     // We start a TCP server by default in native rerun, i.e. when just running `rerun`,
                     // and in that case fading in the welcome screen would be slightly annoying.
                     // However, we also use the TCP server for sending data from the logging SDKs

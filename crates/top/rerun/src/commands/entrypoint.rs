@@ -504,7 +504,7 @@ enum Command {
 //
 // It would be nice to use [`std::process::ExitCode`] here but
 // then there's no good way to get back at the exit code from python
-pub fn run<I, T>(
+pub async fn run<I, T>(
     build_info: re_build_info::BuildInfo,
     call_source: CallSource,
     args: I,
@@ -559,7 +559,7 @@ where
             }
         }
     } else {
-        run_impl(build_info, call_source, args)
+        run_impl(build_info, call_source, args).await
     };
 
     match res {
@@ -583,7 +583,7 @@ where
     }
 }
 
-fn run_impl(
+async fn run_impl(
     _build_info: re_build_info::BuildInfo,
     call_source: CallSource,
     args: Args,
@@ -629,7 +629,11 @@ fn run_impl(
                 quiet: false,
             };
             let rx = re_sdk_comms::serve(&args.bind, args.port, server_options)?;
-            vec![rx]
+
+            // just plug grpc listener somewhere
+            let grpc_rx = re_sdk_comms::serve_grpc().await?;
+
+            vec![rx, grpc_rx]
         }
 
         #[cfg(not(feature = "server"))]

@@ -16,12 +16,13 @@ use re_memory::AccountingAllocator;
 static GLOBAL: AccountingAllocator<mimalloc::MiMalloc> =
     AccountingAllocator::new(mimalloc::MiMalloc);
 
-fn main() -> std::process::ExitCode {
+#[tokio::main]
+async fn main() -> std::process::ExitCode {
     re_log::setup_logging();
 
     let build_info = re_build_info::build_info!();
 
-    let result = rerun::run(build_info, rerun::CallSource::Cli, std::env::args());
+    let result = rerun::run(build_info, rerun::CallSource::Cli, std::env::args()).await;
 
     match result {
         Ok(exit_code) => std::process::ExitCode::from(exit_code),

@@ -339,7 +339,8 @@ impl RecordingStreamBuilder {
             RecordingStream::new(
                 store_info,
                 batcher_config,
-                Box::new(crate::log_sink::TcpSink::new(addr, flush_timeout)),
+                // hack through things and make --connect use gRPC
+                Box::new(crate::log_sink::GrpcSink::new()),
             )
         } else {
             re_log::debug!("Rerun disabled - call to connect() ignored");
@@ -1666,7 +1667,7 @@ impl RecordingStream {
             return;
         }
 
-        let sink = crate::log_sink::TcpSink::new(addr, flush_timeout);
+        let sink = crate::log_sink::GrpcSink::new();
 
         self.set_sink(Box::new(sink));
     }

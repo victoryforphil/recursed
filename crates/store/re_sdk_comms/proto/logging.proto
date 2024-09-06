@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ingestion;
+
+message RawLogMsg {
+    bytes data = 1;
+}
+
+message RecordingResponse {
+    int32 status = 1;
+}
+
+service DataIngestion {
+    rpc Record (stream RawLogMsg) returns (stream RecordingResponse) {}
+}

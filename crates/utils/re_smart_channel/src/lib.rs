@@ -60,6 +60,11 @@ pub enum SmartChannelSource {
     /// We are a TCP server listening on this port.
     TcpServer { port: u16 },
 
+    /// The channel was created in the context of receiving data from one or more Rerun SDKs
+    /// using gRPC
+    /// We are a gRPC server listening on this port
+    GrpcServer,
+
     /// The channel was created in the context of streaming in RRD data from standard input.
     Stdin,
 }
@@ -74,6 +79,7 @@ impl std::fmt::Display for SmartChannelSource {
             Self::Sdk => "SDK".fmt(f),
             Self::WsClient { ws_server_url } => ws_server_url.fmt(f),
             Self::TcpServer { port } => write!(f, "TCP server, port {port}"),
+            Self::GrpcServer => write!(f, "gRPC server"),
             Self::Stdin => "Standard input".fmt(f),
         }
     }
@@ -86,7 +92,7 @@ impl SmartChannelSource {
             Self::RrdHttpStream { .. }
             | Self::WsClient { .. }
             | Self::JsChannel { .. }
-            | Self::TcpServer { .. } => true,
+            | Self::TcpServer { .. } | Self::GrpcServer => true,
         }
     }
 }
@@ -139,6 +145,8 @@ pub enum SmartMessageSource {
         // reason.
         addr: Option<std::net::SocketAddr>,
     },
+
+    /// TODO zmihaljcic@ add gRPC client as source
 
     /// The data is streaming in from standard input.
     Stdin,
