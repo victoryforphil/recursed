@@ -4,7 +4,7 @@ use std::sync::Arc;
 use egui_extras::{Column, TableRow};
 use itertools::{Either, Itertools};
 
-use re_chunk_store::{ChunkStore, LatestAtQuery, RangeQuery};
+use re_chunk_store::{ChunkStore, ChunkStoreAPI, LatestAtQuery, RangeQuery};
 use re_log_types::{ResolvedTimeRange, StoreKind, TimeType, TimeZone, Timeline, TimelineName};
 use re_ui::{list_item, UiExt as _};
 use re_viewer_context::ViewerContext;
@@ -82,11 +82,14 @@ impl DatastoreUi {
             let exit_focused_chunk = if let Some(focused_chunk) = &mut self.focused_chunk {
                 focused_chunk.ui(ui, time_zone)
             } else {
+                let recording_store = &*ctx.recording_store();
+                let blueprint_store = &*ctx.blueprint_store();
+
                 self.chunk_store_ui(
                     ui,
                     match self.store_kind {
-                        StoreKind::Recording => ctx.recording_store(),
-                        StoreKind::Blueprint => ctx.blueprint_store(),
+                        StoreKind::Recording => recording_store,
+                        StoreKind::Blueprint => blueprint_store,
                     },
                     datastore_ui_active,
                     time_zone,
@@ -104,7 +107,7 @@ impl DatastoreUi {
     fn chunk_store_ui(
         &mut self,
         ui: &mut egui::Ui,
-        chunk_store: &ChunkStore,
+        chunk_store: &dyn ChunkStoreAPI,
         datastore_ui_active: &mut bool,
         time_zone: TimeZone,
     ) {
@@ -355,7 +358,7 @@ impl DatastoreUi {
     fn chunk_store_info_ui(
         &mut self,
         ui: &mut egui::Ui,
-        chunk_store: &ChunkStore,
+        chunk_store: &dyn ChunkStoreAPI,
         datastore_ui_active: &mut bool,
     ) -> bool {
         let mut should_copy_chunks = false;

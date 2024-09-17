@@ -107,7 +107,7 @@ impl LatestAtQueryHandle<'_> {
                 .filter_map(|descr| match descr {
                     ColumnDescriptor::Component(descr) => {
                         let results = self.engine.cache.latest_at(
-                            self.engine.store,
+                            &*self.engine.store,
                             &query,
                             &descr.entity_path,
                             [descr.component_name],

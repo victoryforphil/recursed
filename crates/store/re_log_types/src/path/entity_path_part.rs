@@ -32,6 +32,10 @@ impl EntityPathPart {
         Self(unescaped_string.into())
     }
 
+    pub fn interned(&self) -> &InternedString {
+        &self.0
+    }
+
     /// Unescape the string, forgiving any syntax error with a best-effort approach.
     pub fn parse_forgiving(input: &str) -> Self {
         Self::parse_forgiving_with_warning(input, None)

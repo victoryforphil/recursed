@@ -142,6 +142,8 @@ pub use re_entity_db::external::re_chunk_store::{
     ChunkStoreSubscriber,
 };
 
+pub use re_storagenode_types::*;
+
 /// To register a new external data loader, simply add an executable in your $PATH whose name
 /// starts with this prefix.
 // NOTE: this constant is duplicated in `re_data_source` to avoid an extra dependency here.

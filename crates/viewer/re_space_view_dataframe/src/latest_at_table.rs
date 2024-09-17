@@ -51,10 +51,10 @@ pub(crate) fn latest_at_table_ui(
             .flat_map(|entity_path| {
                 sorted_instance_paths_for(
                     entity_path,
-                    ctx.recording_store(),
+                    &*ctx.recording_store(),
                     &latest_at_query.timeline(),
                     latest_at_query,
-                )
+                ).collect::<Vec<_>>()
             })
             .collect();
 

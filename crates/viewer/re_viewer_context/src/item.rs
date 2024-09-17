@@ -193,7 +193,7 @@ pub fn resolve_mono_instance_path(
             if let Some(array) = entity_db
                 .query_caches()
                 .latest_at(
-                    entity_db.store(),
+                    &*entity_db.store(),
                     query,
                     &instance.entity_path,
                     [component_name],

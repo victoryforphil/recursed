@@ -1,8 +1,11 @@
+use std::net::ToSocketAddrs;
+
 use clap::{CommandFactory, Subcommand};
 use itertools::Itertools;
 
 use re_data_source::DataSource;
 use re_log_types::LogMsg;
+use re_sdk_comms::GrpcClient;
 use re_smart_channel::{ReceiveSet, Receiver, SmartMessagePayload};
 
 use crate::{commands::RrdCommands, CallSource};
@@ -620,6 +623,8 @@ fn run_impl(
         }
     };
 
+    // Subscribe to remote data store update events
+
     // Where do we get the data from?
     let rx: Vec<Receiver<LogMsg>> = if args.url_or_paths.is_empty() {
         #[cfg(feature = "server")]
@@ -734,6 +739,9 @@ fn run_impl(
             return Ok(());
         }
     } else {
+        let data_store_client =
+            GrpcClient::new("127.0.0.1:51234".to_socket_addrs().unwrap().next().unwrap());
+
         #[cfg(feature = "native_viewer")]
         return re_viewer::run_native_app(
             Box::new(move |cc| {
@@ -747,6 +755,10 @@ fn run_impl(
                 for rx in rx {
                     app.add_receiver(rx);
                 }
+
+                // subscribe to remote data store update events
+                app.add_data_store_updates_receiver(data_store_client.msg_rx);
+
                 app.set_profiler(profiler);
                 if let Ok(url) = std::env::var("EXAMPLES_MANIFEST_URL") {
                     app.set_examples_manifest_url(url);

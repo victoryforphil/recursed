@@ -1,0 +1,217 @@
+syntax = "proto3";
+
+package storage_api;
+
+service StorageNode {
+    rpc Insert(stream InsertData) returns (stream InsertResponse) {}
+    rpc SubscribeToUpdates(SubscribeRequest) returns (stream UpdateResponse) {}
+    rpc Generation(DataStoreId) returns (DataStoreGeneration) {}
+    rpc LatestAtRelevantChunks(LatestAtRelevantChunksRequest) returns (LatestAtRelevantChunksResponse) {}
+    rpc EntityHasComponentOnTimeline(EntityHasComponentOnTimelineRequest) returns (EntityHasComponentOnTimelineResponse) {}
+    rpc EntityHasComponent(EntityHasComponentRequest) returns (EntityHasComponentResponse) {}
+    rpc RangeRelevantChunks(RangeRelevantChunksRequest) returns (RangeRelevantChunksResponse) {}
+    rpc RangeRelevantChunksAllComponents(RangeRelevantChunksAllComponentsRequest) returns (RangeRelevantChunksAllComponentsResponse) {}
+    rpc EntityHasData(EntityHasDataRequest) returns (EntityHasDataResponse) {}
+    rpc AllComponentsOnTimeline(AllComponentsOnTimelineRequest) returns (AllComponentsOnTimelineResponse) {}
+    rpc AllComponentsForEntity(AllComponentsForEntityRequest) returns (AllComponentsForEntityResponse) {}
+    rpc EntityHasDataOnTimeline(EntityHasDataOnTimelineRequest) returns (EntityHasDataOnTimelineResponse) {}
+}
+
+// range at query for all components chunks request and response
+message RangeRelevantChunksAllComponentsRequest {
+    DataStoreId store_id = 1;
+    RangeQuery query = 2;
+    EntityPath entity_path = 3;
+}
+
+message RangeRelevantChunksAllComponentsResponse {
+    // chunk data is list of arrow msgs (easy existing encoding / decoding)
+    bytes chunk_data = 1;
+}
+
+// entity has data on timeline request and response
+message EntityHasDataOnTimelineRequest {
+    DataStoreId store_id = 1;
+    Timeline timeline = 2;
+    EntityPath entity_path = 3;
+}
+
+message EntityHasDataOnTimelineResponse {
+    bool has_data = 1;
+}
+
+// all components for entity request and response
+message AllComponentsForEntityRequest {
+    DataStoreId store_id = 1;
+    EntityPath entity_path = 2;
+}
+
+message AllComponentsForEntityResponse {
+    ComponentsSet components_set = 1;
+}
+
+// all components on timeline request and response
+message AllComponentsOnTimelineRequest {
+    DataStoreId store_id = 1;
+    Timeline timeline = 2;
+    EntityPath entity_path = 3;
+}
+
+message AllComponentsOnTimelineResponse {
+    ComponentsSet components_set = 1;
+}
+
+message ComponentsSet {
+    repeated string component_names = 1;
+}
+
+// entity has data query request and response
+message EntityHasComponentRequest {
+    DataStoreId store_id = 1;
+    EntityPath entity_path = 2;
+    string component_name = 3;
+}
+
+message EntityHasComponentResponse {
+    bool has_component = 1;
+}
+
+// entity has data query request and response
+message EntityHasDataRequest {
+    DataStoreId store_id = 1;
+    EntityPath entity_path = 2;
+}
+
+message EntityHasDataResponse {
+    bool has_data = 1;
+}
+
+// range at query chunks request and response
+message RangeRelevantChunksRequest {
+    DataStoreId store_id = 1;
+    RangeQuery query = 2;
+    EntityPath entity_path = 3;
+    string component_name = 4;
+}
+
+message RangeRelevantChunksResponse {
+    // chunk data is list of arrow msgs (easy existing encoding / decoding)
+    bytes chunk_data = 1;
+}
+
+message RangeQuery {
+    Timeline timeline = 1;
+    TimeRange range = 2;
+    RangeQueryOptions options = 3;
+}
+
+message TimeRange {
+    int64 start = 1;
+    int64 end = 2;
+}
+
+message RangeQueryOptions {
+    bool keep_extra_timelines = 1;
+    bool keep_extra_components = 2;
+    bool include_extended_bounds = 3;
+}
+
+// Entity has component on timeline request and response
+message EntityHasComponentOnTimelineRequest {
+    DataStoreId store_id = 1;
+    Timeline timeline = 2;
+    EntityPath entity_path = 3;
+    string component_name = 4;
+}
+
+message EntityHasComponentOnTimelineResponse {
+    bool has_component = 1;
+}
+
+// latest at query chunks request
+message LatestAtRelevantChunksRequest {
+    DataStoreId store_id = 1;
+    LatestAtQuery query = 2;
+    EntityPath entity_path = 3;
+    string component_name = 4;
+}
+
+message LatestAtQuery {
+    Timeline timeline = 1;
+    int64 at = 2;
+}
+
+message Timeline {
+    string name = 1;
+    TimelineType typ = 2;
+}
+
+enum TimelineType {
+    TIMELINE_TYPE_TIME = 0;
+    TIMELINE_TYPE_SEQUENCE = 1;
+}
+
+message EntityPath {
+    uint64 hash = 1;
+    repeated string part = 2;
+}
+
+message LatestAtRelevantChunksResponse {
+    // chunk data is list of arrow msgs (easy existing encoding / decoding)
+    bytes chunk_data = 1;
+}
+
+// insert request
+message InsertData {
+    DataStoreId store_id = 1;
+    // for now we deal with raw bytes that upper layer will interpret / decode
+    bytes chunk_data = 2;
+}
+
+enum DataStoreKind {
+    DATA_STORE_KIND_RECORDING = 0;
+    DATA_STORE_KIND_BLUEPRINT = 1;
+}
+
+message DataStoreId {
+    DataStoreKind kind = 1;
+    string id = 2;
+}
+
+message DataStoreGeneration {
+    uint64 insert_id = 1;
+    uint64 gc_id = 2;
+}
+
+enum DataStoreDiffKind {
+    DATA_STORE_DIFF_KIND_ADDITION = 0;
+    DATA_STORE_DIFF_KIND_DELETION = 1;
+}
+
+message DataStoreDiff {
+    DataStoreDiffKind kind = 1;
+    // this is for now ArrowMsg which we can easily serialize and deserialize
+    bytes chunk_data = 2;
+    // TODO compacted field
+}
+
+message DataStoreEvent {
+    DataStoreId store_id = 1;
+    DataStoreGeneration store_generation = 2;
+    uint64 event_id = 3;
+    DataStoreDiff diff = 4;
+}
+
+// for now let's leverage gRPC level error handling for application layer errors
+// so no specific error handling structure inside grpc messages
+message InsertResponse {
+    repeated DataStoreEvent store_event = 1;
+}
+
+message SubscribeRequest {
+    uint64 subscriber_id = 1;
+}
+
+message UpdateResponse {
+    repeated DataStoreEvent store_events = 1;
+}

@@ -33,7 +33,7 @@ pub use self::recording_stream::{
     RecordingStreamResult,
 };
 
-pub use re_sdk_comms::{default_flush_timeout, default_server_addr};
+pub use re_sdk_comms::{default_flush_timeout, default_server_addr, default_grpc_server_address};
 
 pub use re_log_types::{
     entity_path, ApplicationId, EntityPath, EntityPathPart, Instance, StoreId, StoreKind,

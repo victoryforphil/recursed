@@ -5,7 +5,7 @@ use nohash_hasher::IntMap;
 use parking_lot::RwLock;
 
 use re_chunk::{Chunk, ChunkId};
-use re_chunk_store::{ChunkStore, RangeQuery, TimeInt};
+use re_chunk_store::{ChunkStore, ChunkStoreAPI, RangeQuery, TimeInt};
 use re_log_types::{EntityPath, ResolvedTimeRange};
 use re_types_core::{ComponentName, DeserializationError, SizeBytes};
 
@@ -21,7 +21,7 @@ impl Caches {
     /// This is a cached API -- data will be lazily cached upon access.
     pub fn range(
         &self,
-        store: &ChunkStore,
+        store: &dyn ChunkStoreAPI,
         query: &RangeQuery,
         entity_path: &EntityPath,
         component_names: impl IntoIterator<Item = ComponentName>,
@@ -250,7 +250,7 @@ impl RangeCache {
     /// Queries cached range data for a single component.
     pub fn range(
         &mut self,
-        store: &ChunkStore,
+        store: &dyn ChunkStoreAPI,
         query: &RangeQuery,
         entity_path: &EntityPath,
         component_name: ComponentName,

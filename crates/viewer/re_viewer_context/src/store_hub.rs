@@ -31,11 +31,10 @@ use crate::StoreContext;
 ///
 /// The default blueprint is usually the blueprint set by the SDK.
 /// This lets users reset the active blueprint to the one sent by the SDK.
-#[derive(Default)]
 pub struct StoreHub {
     /// How we load and save blueprints.
     persistence: BlueprintPersistence,
-
+    empty_entity_db: EntityDb,
     active_rec_id: Option<StoreId>,
     active_application_id: Option<ApplicationId>,
     default_blueprint_by_app_id: HashMap<ApplicationId, StoreId>,
@@ -130,13 +129,12 @@ impl StoreHub {
 
         Self {
             persistence,
-
+            empty_entity_db: EntityDb::new(re_log_types::StoreId::empty_recording()),
             active_rec_id: None,
             active_application_id: None,
             default_blueprint_by_app_id,
             active_blueprint_by_app_id: Default::default(),
             store_bundle,
-
             blueprint_last_save: Default::default(),
             blueprint_last_gc: Default::default(),
         }
@@ -156,9 +154,6 @@ impl StoreHub {
     /// All of the returned references to blueprints and recordings will have a
     /// matching [`ApplicationId`].
     pub fn read_context(&mut self) -> Option<StoreContext<'_>> {
-        static EMPTY_ENTITY_DB: once_cell::sync::Lazy<EntityDb> =
-            once_cell::sync::Lazy::new(|| EntityDb::new(re_log_types::StoreId::empty_recording()));
-
         // If we have an app-id, then use it to look up the blueprint.
         let app_id = self.active_application_id.clone()?;
 
@@ -215,7 +210,7 @@ impl StoreHub {
             app_id,
             blueprint: active_blueprint,
             default_blueprint,
-            recording: recording.unwrap_or(&EMPTY_ENTITY_DB),
+            recording: recording.unwrap_or(&self.empty_entity_db),
             bundle: &self.store_bundle,
             hub: self,
         })
@@ -310,11 +305,12 @@ impl StoreHub {
     pub fn set_active_app(&mut self, app_id: ApplicationId) {
         // If we don't know of a blueprint for this `ApplicationId` yet,
         // try to load one from the persisted store
-        if !self.active_blueprint_by_app_id.contains_key(&app_id) {
-            if let Err(err) = self.try_to_load_persisted_blueprint(&app_id) {
-                re_log::warn!("Failed to load persisted blueprint: {err}");
-            }
-        }
+        // ! Commented out as loading blueprint will also trigger storing the info in the chunk store
+        // if !self.active_blueprint_by_app_id.contains_key(&app_id) {
+        //     if let Err(err) = self.try_to_load_persisted_blueprint(&app_id) {
+        //         re_log::warn!("Failed to load persisted blueprint: {err}");
+        //     }
+        // }
 
         if self.active_application_id.as_ref() == Some(&app_id) {
             return;

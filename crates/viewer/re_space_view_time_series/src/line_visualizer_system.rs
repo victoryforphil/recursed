@@ -444,7 +444,7 @@ impl SeriesLineSystem {
                 &data_result.entity_path,
                 time_per_pixel,
                 points,
-                ctx.recording_store(),
+                &*ctx.recording_store(),
                 view_query,
                 series_name.into(),
                 aggregator,
@@ -466,7 +466,7 @@ fn collect_recursive_clears(
     let mut clear_entity_path = entity_path.clone();
     loop {
         let results = ctx.recording().query_caches().range(
-            ctx.recording_store(),
+            &*ctx.recording_store(),
             query,
             &clear_entity_path,
             [ClearIsRecursive::name()],

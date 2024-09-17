@@ -432,7 +432,7 @@ impl DataQueryPropertyResolver<'_> {
                         if let Some(component_data) = blueprint
                             .query_caches()
                             .latest_at(
-                                blueprint.store(),
+                                &*blueprint.store(),
                                 blueprint_query,
                                 &recursive_override_path,
                                 [component_name],
@@ -467,7 +467,7 @@ impl DataQueryPropertyResolver<'_> {
                         if let Some(component_data) = blueprint
                             .query_caches()
                             .latest_at(
-                                blueprint.store(),
+                                &*blueprint.store(),
                                 blueprint_query,
                                 &individual_override_path,
                                 [component_name],

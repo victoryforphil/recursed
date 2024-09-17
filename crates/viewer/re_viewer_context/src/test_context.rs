@@ -1,8 +1,8 @@
 use crate::{
-    command_channel, ApplicationSelectionState, ComponentUiRegistry, RecordingConfig,
-    SpaceViewClassRegistry, StoreContext, ViewerContext,
+    command_channel, store_hub::BlueprintPersistence, ApplicationSelectionState, ComponentUiRegistry, RecordingConfig, SpaceViewClassRegistry, StoreContext, StoreHub, ViewerContext
 };
 
+use ahash::{HashMap, HashMapExt};
 use re_chunk_store::LatestAtQuery;
 use re_entity_db::EntityDb;
 use re_log_types::{StoreId, StoreKind, Timeline};
@@ -65,7 +65,11 @@ impl TestContext {
                 default_blueprint: None,
                 recording: &self.recording_store,
                 bundle: &Default::default(),
-                hub: &Default::default(),
+                hub: &StoreHub::new( BlueprintPersistence {
+                    loader: None,
+                    saver: None,
+                    validator: None,
+                }, &|_| {}),
             };
 
             let rec_cfg = RecordingConfig::default();

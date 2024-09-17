@@ -78,6 +78,7 @@ const CRATES_AT_INFO_LEVEL: &[&str] = &[
     "rustls",
     // winit 0.30.5 spams about `set_cursor_visible` calls. It's gone on winit master, so hopefully gone in next winit release.
     "winit",
+    "tower"
 ];
 
 /// Get `RUST_LOG` environment variable or `info`, if not set.

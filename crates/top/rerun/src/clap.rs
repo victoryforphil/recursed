@@ -9,6 +9,7 @@ use re_sdk::{RecordingStream, RecordingStreamBuilder};
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum RerunBehavior {
     Connect(SocketAddr),
+    ConnectGrpc(SocketAddr),
 
     Save(PathBuf),
 
@@ -60,6 +61,13 @@ pub struct RerunArgs {
     #[allow(clippy::option_option)]
     connect: Option<Option<SocketAddr>>,
 
+    /// Connects and sends the logged data to a remote Rerun in memory datastore.
+    ///
+    /// Optionally takes an `ip:port`.
+    #[clap(long)]
+    #[allow(clippy::option_option)]
+    connect_grpc: Option<Option<SocketAddr>>,
+
     /// Connects and sends the logged data to a web-based Rerun viewer.
     #[cfg(feature = "web_viewer")]
     #[clap(long)]
@@ -103,10 +111,15 @@ impl Drop for ServeGuard {
 impl RerunArgs {
     /// Creates a new [`RecordingStream`] according to the CLI parameters.
     #[track_caller] // track_caller so that we can see if we are being called from an official example.
-    pub fn init(&self, application_id: &str) -> anyhow::Result<(RecordingStream, ServeGuard)> {
+    pub fn  init(&self, application_id: &str) -> anyhow::Result<(RecordingStream, ServeGuard)> {
         match self.to_behavior()? {
             RerunBehavior::Stdout => Ok((
                 RecordingStreamBuilder::new(application_id).stdout()?,
+                Default::default(),
+            )),
+            RerunBehavior::ConnectGrpc(addr) => Ok((
+                RecordingStreamBuilder::new(application_id)
+                    .connect_grpc(addr)?,
                 Default::default(),
             )),
 
@@ -168,6 +181,12 @@ impl RerunArgs {
         match self.connect {
             Some(Some(addr)) => return Ok(RerunBehavior::Connect(addr)),
             Some(None) => return Ok(RerunBehavior::Connect(crate::default_server_addr())),
+            None => {}
+        }
+
+        match self.connect_grpc {
+            Some(Some(addr)) => return Ok(RerunBehavior::ConnectGrpc(addr)),
+            Some(None) => return Ok(RerunBehavior::ConnectGrpc(crate::default_grpc_server_address())),
             None => {}
         }
 

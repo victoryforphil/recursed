@@ -16,6 +16,7 @@ use re_memory::AccountingAllocator;
 static GLOBAL: AccountingAllocator<mimalloc::MiMalloc> =
     AccountingAllocator::new(mimalloc::MiMalloc);
 
+
 fn main() -> std::process::ExitCode {
     re_log::setup_logging();
 

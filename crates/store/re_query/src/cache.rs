@@ -8,7 +8,7 @@ use nohash_hasher::IntSet;
 use parking_lot::RwLock;
 
 use re_chunk::ChunkId;
-use re_chunk_store::{ChunkStore, ChunkStoreDiff, ChunkStoreEvent, ChunkStoreSubscriber};
+use re_chunk_store::{ChunkStore, ChunkStoreAPI, ChunkStoreDiff, ChunkStoreEvent, ChunkStoreSubscriber};
 use re_log_types::{EntityPath, ResolvedTimeRange, StoreId, TimeInt, Timeline};
 use re_types_core::{components::ClearIsRecursive, ComponentName, Loggable as _};
 
@@ -149,7 +149,7 @@ impl std::fmt::Debug for Caches {
 
 impl Caches {
     #[inline]
-    pub fn new(store: &ChunkStore) -> Self {
+    pub fn new(store: &dyn ChunkStoreAPI) -> Self {
         Self {
             store_id: store.id().clone(),
             might_require_clearing: Default::default(),

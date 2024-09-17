@@ -13,6 +13,12 @@ mod buffered_client;
 #[cfg(feature = "client")]
 pub use {buffered_client::Client, tcp_client::ClientError};
 
+#[cfg(feature = "client")]
+mod grpc_client;
+
+#[cfg(feature = "client")]
+pub use grpc_client::GrpcClient;
+
 #[cfg(feature = "server")]
 mod server;
 
@@ -70,9 +76,16 @@ pub const PROTOCOL_HEADER: &str = "rerun";
 
 pub const DEFAULT_SERVER_PORT: u16 = 9876;
 
+pub const DEFAULT_SERVER_GRPC_PORT: u16 = 51234;
+
 /// The default address of a Rerun TCP server which an SDK connects to.
 pub fn default_server_addr() -> std::net::SocketAddr {
     std::net::SocketAddr::from(([127, 0, 0, 1], DEFAULT_SERVER_PORT))
+}
+
+/// The default address of a Rerun gRPC server to which an SDK connects to.
+pub fn default_grpc_server_address() -> std::net::SocketAddr {
+    std::net::SocketAddr::from(([127, 0, 0, 1], DEFAULT_SERVER_GRPC_PORT))
 }
 
 /// The default amount of time to wait for the TCP connection to resume during a flush

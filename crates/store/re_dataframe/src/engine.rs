@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use re_chunk::TransportChunk;
 use re_chunk_store::{
-    ChunkStore, ColumnDescriptor, LatestAtQueryExpression, QueryExpression, RangeQueryExpression,
+    ChunkStore, ChunkStoreAPI, ColumnDescriptor, LatestAtQueryExpression, QueryExpression, RangeQueryExpression
 };
 use re_query::Caches;
 
@@ -53,7 +55,7 @@ impl<'a> From<RangeQueryHandle<'a>> for QueryHandle<'a> {
 // got to go. But for that we need to generally introduce `ChunkStoreHandle` and `QueryCacheHandle`
 // first, and this is not as straightforward as it seems.
 pub struct QueryEngine<'a> {
-    pub store: &'a ChunkStore,
+    pub store: &'a dyn ChunkStoreAPI,
     pub cache: &'a Caches,
 }
 

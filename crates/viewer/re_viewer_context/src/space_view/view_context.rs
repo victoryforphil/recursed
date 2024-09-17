@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use re_chunk::ArrowArray;
 use re_chunk_store::LatestAtQuery;
@@ -47,7 +47,7 @@ impl<'a> ViewContext<'a> {
 
     /// The chunk store of the active recording.
     #[inline]
-    pub fn recording_store(&self) -> &re_chunk_store::ChunkStore {
+    pub fn recording_store(&self) -> &dyn re_chunk_store::ChunkStoreAPI {
         self.viewer_ctx.recording_store()
     }
 

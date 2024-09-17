@@ -365,3 +365,26 @@ impl LogSink for TcpSink {
         self.client.drop_if_disconnected();
     }
 }
+
+// ----------------------------------------------------------------------------
+pub struct GrpcSink {
+    client: re_sdk_comms::GrpcClient,
+}
+
+impl GrpcSink {
+    pub fn new(addr: std::net::SocketAddr) -> Self {
+        Self {
+            client: re_sdk_comms::GrpcClient::new(addr),
+        }
+    }
+}
+
+impl LogSink for GrpcSink {
+    fn send(&self, msg: LogMsg) {
+        self.client.send(msg);
+    }
+
+    fn flush_blocking(&self) {
+        todo!()
+    }
+}

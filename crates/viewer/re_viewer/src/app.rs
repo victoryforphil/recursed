@@ -1,9 +1,14 @@
 use std::sync::Arc;
 
 use re_build_info::CrateVersion;
+use re_chunk::external::crossbeam::channel::Receiver;
+use re_chunk_store::ChunkStoreEvent;
 use re_data_source::{DataSource, FileContents};
 use re_entity_db::entity_db::EntityDb;
-use re_log_types::{ApplicationId, FileSource, LogMsg, StoreKind};
+use re_log_types::{
+    external::re_tuid::Tuid, ApplicationId, FileSource, LogMsg, SetStoreInfo, StoreInfo, StoreKind,
+    StoreSource, Time,
+};
 use re_renderer::WgpuResourcePoolStatistics;
 use re_smart_channel::{ReceiveSet, SmartChannelSource};
 use re_ui::{toasts, DesignTokens, UICommand, UICommandSender};
@@ -161,6 +166,8 @@ pub struct App {
 
     rx: ReceiveSet<LogMsg>,
 
+    updates_rx: Option<Receiver<Vec<ChunkStoreEvent>>>,
+
     #[cfg(target_arch = "wasm32")]
     open_files_promise: Option<poll_promise::Promise<Vec<re_data_source::FileContents>>>,
 
@@ -295,6 +302,7 @@ impl App {
             ram_limit_warner: re_memory::RamLimitWarner::warn_at_fraction_of_max(0.75),
             egui_ctx,
             screenshotter,
+            updates_rx: None,
 
             #[cfg(target_arch = "wasm32")]
             popstate_listener: None,
@@ -370,6 +378,10 @@ impl App {
         let rx = crate::wake_up_ui_thread_on_each_msg(rx, self.egui_ctx.clone());
 
         self.rx.add(rx);
+    }
+
+    pub fn add_data_store_updates_receiver(&mut self, rx: Receiver<Vec<ChunkStoreEvent>>) {
+        self.updates_rx = Some(rx);
     }
 
     pub fn msg_receive_set(&self) -> &ReceiveSet<LogMsg> {
@@ -796,7 +808,7 @@ impl App {
             return;
         };
         let rec_id = entity_db.store_id();
-        let Some(rec_cfg) = self.state.recording_config_mut(rec_id) else {
+        let Some(rec_cfg) = self.state.recording_config_mut(&rec_id) else {
             return;
         };
         let time_ctrl = rec_cfg.time_ctrl.get_mut();
@@ -1017,6 +1029,40 @@ impl App {
                 text: msg,
                 options: toasts::ToastOptions::with_ttl_in_seconds(4.0),
             });
+        }
+    }
+
+    // This is what's needed to trigger view updates when remote chunk store is updated
+    fn receive_data_store_updates(&mut self, store_hub: &mut StoreHub) {
+        if let Some(updates_rx) = &mut self.updates_rx {
+            while let Ok(updates) = updates_rx.try_recv() {
+                // huh...
+                let store_id = &updates[0].store_id;
+                let entity_db = store_hub.entity_db_mut(store_id);
+
+                entity_db.process_remote_data_store_update(&updates);
+
+                // do what SetStoreInfo message would trigger as we don't stream that from the server
+                if entity_db.store_info().is_none() {
+                    entity_db.set_store_info(SetStoreInfo {
+                        row_id: Tuid::new(),
+                        info: StoreInfo {
+                            application_id: "rerun_example_incremental_logging".into(),
+                            store_id: store_id.clone(),
+                            started: Time::now(),
+                            cloned_from: None,
+                            is_official_example: true,
+                            store_source: StoreSource::Other("Grpc".into()),
+                            store_version: Some(CrateVersion::new(19, 0, 0)),
+                        },
+                    });
+                    store_hub.set_active_recording_id(store_id.clone());
+
+                    self.command_sender.send_system(SystemCommand::SetSelection(
+                        re_viewer_context::Item::StoreId(store_id.clone()),
+                    ));
+                }
+            }
         }
     }
 
@@ -1572,6 +1618,7 @@ impl eframe::App for App {
 
         self.show_text_logs_as_notifications();
         self.receive_messages(&mut store_hub, egui_ctx);
+        self.receive_data_store_updates(&mut store_hub);
 
         if self.app_options().blueprint_gc {
             store_hub.gc_blueprints();

@@ -4,7 +4,7 @@ use ahash::HashSet;
 use nohash_hasher::IntMap;
 
 use re_chunk::RowId;
-use re_chunk_store::{ChunkStore, ChunkStoreDiffKind, ChunkStoreEvent, ChunkStoreSubscriber};
+use re_chunk_store::{ChunkStore, ChunkStoreAPI, ChunkStoreDiffKind, ChunkStoreEvent, ChunkStoreSubscriber};
 use re_log_types::{EntityPath, EntityPathHash, EntityPathPart, TimeInt, Timeline};
 use re_types_core::ComponentName;
 
@@ -122,7 +122,7 @@ impl EntityTree {
     }
 
     /// Returns `true` if this entity has no children and no data.
-    pub fn is_empty(&self, chunk_store: &ChunkStore) -> bool {
+    pub fn is_empty(&self, chunk_store: &dyn ChunkStoreAPI) -> bool {
         self.children.is_empty() && !chunk_store.entity_has_data(&self.path)
     }
 
@@ -156,7 +156,7 @@ impl EntityTree {
     }
 
     /// Updates the [`EntityTree`] by removing any entities which have no data and no children.
-    pub fn on_store_deletions(&mut self, data_store: &ChunkStore, events: &[ChunkStoreEvent]) {
+    pub fn on_store_deletions(&mut self, data_store: &dyn ChunkStoreAPI, events: &[ChunkStoreEvent]) {
         re_tracing::profile_function!();
 
         // We don't actually use the events for anything, we just want to

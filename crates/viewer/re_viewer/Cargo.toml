@@ -70,6 +70,7 @@ re_space_view_tensor.workspace = true
 re_space_view_text_document = { workspace = true, features = ["markdown"] }
 re_space_view_text_log.workspace = true
 re_space_view_time_series.workspace = true
+re_storagenode_types.workspace = true
 re_time_panel.workspace = true
 re_tracing = { workspace = true, features = ["server"] }
 re_types.workspace = true

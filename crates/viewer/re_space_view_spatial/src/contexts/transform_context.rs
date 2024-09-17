@@ -531,7 +531,7 @@ fn query_and_resolve_tree_transform_at_entity(
     query: &LatestAtQuery,
 ) -> Option<glam::Affine3A> {
     let Some(transform3d_components) =
-        TransformComponentTracker::access(entity_db.store_id(), |tracker| {
+        TransformComponentTracker::access(&entity_db.store_id(), |tracker| {
             tracker.transform3d_components(entity_path).cloned()
         })
         .flatten()
@@ -577,7 +577,7 @@ fn query_and_resolve_instance_poses_at_entity(
     query: &LatestAtQuery,
 ) -> Vec<glam::Affine3A> {
     let Some(pose3d_components) =
-        TransformComponentTracker::access(entity_db.store_id(), |tracker| {
+        TransformComponentTracker::access(&entity_db.store_id(), |tracker| {
             tracker.pose3d_components(entity_path).cloned()
         })
         .flatten()

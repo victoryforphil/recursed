@@ -347,6 +347,23 @@ impl RecordingStreamBuilder {
         }
     }
 
+    pub fn connect_grpc(
+        self,
+        addr: std::net::SocketAddr,
+    ) -> RecordingStreamResult<RecordingStream> {
+        let (enabled, store_info, batcher_config) = self.into_args();
+        if enabled {
+            RecordingStream::new(
+                store_info,
+                batcher_config,
+                Box::new(crate::log_sink::GrpcSink::new(addr)),
+            )
+        } else {
+            re_log::debug!("Rerun disabled - call to connect() ignored");
+            Ok(RecordingStream::disabled())
+        }
+    }
+
     /// Creates a new [`RecordingStream`] that is pre-configured to stream the data through to an
     /// RRD file on disk.
     ///

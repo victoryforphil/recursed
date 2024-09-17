@@ -86,7 +86,7 @@ pub fn points_to_series(
     entity_path: &EntityPath,
     time_per_pixel: f64,
     points: Vec<PlotPoint>,
-    store: &re_chunk_store::ChunkStore,
+    store: &dyn re_chunk_store::ChunkStoreAPI,
     query: &ViewQuery<'_>,
     series_label: String,
     aggregator: AggregationPolicy,

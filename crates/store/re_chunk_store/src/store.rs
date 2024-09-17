@@ -279,8 +279,8 @@ pub type ChunkIdSetPerTimePerTimelinePerEntity = BTreeMap<EntityPath, ChunkIdSet
 /// Incremented on each edit.
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ChunkStoreGeneration {
-    insert_id: u64,
-    gc_id: u64,
+    pub insert_id: u64,
+    pub gc_id: u64,
 }
 
 /// A complete chunk store: covers all timelines, all entities, everything.

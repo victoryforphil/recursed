@@ -6,8 +6,11 @@
 //! cargo run -p incremental -- --help
 //! ```
 
+use std::time::Duration;
+
 use rand::{distributions::Uniform, Rng as _};
 use rerun::external::re_log;
+use tokio::time::sleep;
 
 #[derive(Debug, clap::Parser)]
 #[clap(author, version, about)]
@@ -16,14 +19,21 @@ struct Args {
     rerun: rerun::clap::RerunArgs,
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     re_log::setup_logging();
 
     use clap::Parser as _;
     let args = Args::parse();
 
     let (rec, _serve_guard) = args.rerun.init("rerun_example_incremental_logging")?;
-    run(&rec)
+    if let Err(err) = run(&rec) {
+        re_log::error!("Failed to run: {err}");
+    }
+
+    sleep(Duration::from_secs(2)).await;
+
+    Ok(())
 }
 
 const README: &str = r#"

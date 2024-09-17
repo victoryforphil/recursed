@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use re_chunk_store::external::re_chunk::ComponentName;
+use re_chunk_store::{external::re_chunk::ComponentName, ChunkStoreAPI};
 use re_chunk_store::ChunkStore;
 use re_log_types::{EntityPath, ResolvedTimeRange, TimeInt, TimeType, TimeZone, Timeline};
 use re_ui::UiExt;
@@ -31,7 +31,7 @@ impl ChunkListMode {
     pub(crate) fn ui(
         &mut self,
         ui: &mut egui::Ui,
-        chunk_store: &ChunkStore,
+        chunk_store: &dyn ChunkStoreAPI,
         time_zone: TimeZone,
     ) -> Option<()> {
         let all_timelines = chunk_store.all_timelines();

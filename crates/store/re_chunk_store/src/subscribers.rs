@@ -129,22 +129,8 @@ impl ChunkStore {
         })
     }
 
-    /// Passes a mutable reference to the downcasted subscriber to the given callback.
-    ///
-    /// Returns `None` if the subscriber doesn't exist or downcasting failed.
-    pub fn with_subscriber_mut<V: ChunkStoreSubscriber, T, F: FnMut(&mut V) -> T>(
-        ChunkStoreSubscriberHandle(handle): ChunkStoreSubscriberHandle,
-        mut f: F,
-    ) -> Option<T> {
-        let subscribers = SUBSCRIBERS.read();
-        subscribers.get(handle as usize).and_then(|subscriber| {
-            let mut subscriber = subscriber.write();
-            subscriber.as_any_mut().downcast_mut::<V>().map(&mut f)
-        })
-    }
-
     /// Called by [`ChunkStore`]'s mutating methods to notify subscriber subscribers of upcoming events.
-    pub(crate) fn on_events(events: &[ChunkStoreEvent]) {
+    pub fn on_events(events: &[ChunkStoreEvent]) {
         re_tracing::profile_function!();
         let subscribers = SUBSCRIBERS.read();
         // TODO(cmc): might want to parallelize at some point.

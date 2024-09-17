@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use re_chunk_store::{ChunkStore, LatestAtQuery};
+use re_chunk_store::{ChunkStore, ChunkStoreAPI, LatestAtQuery};
 use re_entity_db::InstancePath;
 use re_log_types::{EntityPath, Instance, Timeline};
 use re_viewer_context::{ViewQuery, ViewerContext};
@@ -21,7 +21,7 @@ pub(crate) fn sorted_visible_entity_path(
 /// Returns a sorted, deduplicated iterator of all instance paths for a given entity.
 pub(crate) fn sorted_instance_paths_for<'a>(
     entity_path: &'a EntityPath,
-    store: &'a ChunkStore,
+    store: &'a dyn ChunkStoreAPI,
     timeline: &Timeline,
     latest_at_query: &'a LatestAtQuery,
 ) -> impl Iterator<Item = InstancePath> + 'a {

@@ -5,12 +5,15 @@ use parking_lot::Mutex;
 
 use re_chunk::{Chunk, ChunkResult, RowId, TimeInt};
 use re_chunk_store::{
-    ChunkStore, ChunkStoreChunkStats, ChunkStoreConfig, ChunkStoreEvent, ChunkStoreSubscriber,
-    GarbageCollectionOptions, GarbageCollectionTarget,
+    ChunkStore, ChunkStoreAPI, ChunkStoreChunkStats, ChunkStoreConfig, ChunkStoreEvent,
+    ChunkStoreShim, ChunkStoreSubscriber, GarbageCollectionOptions, GarbageCollectionTarget,
 };
 use re_log_types::{
     ApplicationId, EntityPath, EntityPathHash, LogMsg, ResolvedTimeRange, ResolvedTimeRangeF,
     SetStoreInfo, StoreId, StoreInfo, StoreKind, Timeline,
+};
+use re_storagenode_types::storage::{
+    storage_node_client::StorageNodeClient, Channel, ChunkStoreRemote,
 };
 
 use crate::{Error, TimesPerTimeline};
@@ -62,7 +65,7 @@ pub struct EntityDb {
     tree: crate::EntityTree,
 
     /// Stores all components for all entities for all timelines.
-    data_store: ChunkStore,
+    data_store: Box<dyn ChunkStoreAPI>,
 
     /// Query caches for the data in [`Self::data_store`].
     query_caches: re_query::Caches,
@@ -75,8 +78,15 @@ impl EntityDb {
         Self::with_store_config(store_id, ChunkStoreConfig::from_env().unwrap_or_default())
     }
 
-    pub fn with_store_config(store_id: StoreId, store_config: ChunkStoreConfig) -> Self {
-        let data_store = ChunkStore::new(store_id.clone(), store_config);
+    pub fn new_remote(store_id: StoreId) -> Self {
+        Self::with_store_config_and_remote_store(store_id, ChunkStoreConfig::from_env().unwrap_or_default())
+    }
+
+    pub fn with_store_config_and_remote_store(
+        store_id: StoreId,
+        config: ChunkStoreConfig,
+    ) -> Self {
+        let data_store = ChunkStoreRemote::new(store_id.clone(), config);
         let query_caches = re_query::Caches::new(&data_store);
 
         Self {
@@ -88,7 +98,26 @@ impl EntityDb {
             times_per_timeline: Default::default(),
             tree: crate::EntityTree::root(),
             time_histogram_per_timeline: Default::default(),
-            data_store,
+            data_store: Box::new(data_store),
+            query_caches,
+            stats: IngestionStatistics::new(store_id),
+        }
+    }
+
+    pub fn with_store_config(store_id: StoreId, store_config: ChunkStoreConfig) -> Self {
+        let data_store = ChunkStoreShim::new(store_id.clone(), store_config);
+        let query_caches = re_query::Caches::new(&data_store);
+
+        Self {
+            data_source: None,
+            set_store_info: None,
+            last_modified_at: web_time::Instant::now(),
+            latest_row_id: None,
+            entity_path_from_hash: Default::default(),
+            times_per_timeline: Default::default(),
+            tree: crate::EntityTree::root(),
+            time_histogram_per_timeline: Default::default(),
+            data_store: Box::new(data_store),
             query_caches,
             stats: IngestionStatistics::new(store_id),
         }
@@ -100,8 +129,8 @@ impl EntityDb {
     }
 
     #[inline]
-    pub fn data_store(&self) -> &ChunkStore {
-        &self.data_store
+    pub fn data_store(&self) -> &dyn ChunkStoreAPI {
+        &*self.data_store
     }
 
     pub fn store_info_msg(&self) -> Option<&SetStoreInfo> {
@@ -201,8 +230,8 @@ impl EntityDb {
     }
 
     #[inline]
-    pub fn store(&self) -> &ChunkStore {
-        &self.data_store
+    pub fn store(&self) -> &dyn ChunkStoreAPI {
+        &*self.data_store
     }
 
     #[inline]
@@ -212,7 +241,7 @@ impl EntityDb {
 
     #[inline]
     pub fn store_id(&self) -> &StoreId {
-        self.data_store.id()
+        self.data_store().id()
     }
 
     /// If this entity db is the result of a clone, which store was it cloned from?
@@ -361,6 +390,22 @@ impl EntityDb {
         Ok(())
     }
 
+    pub fn process_remote_data_store_update(&mut self, update: &[ChunkStoreEvent]) {
+        for u in update {
+            self.register_entity_path(u.chunk.entity_path());
+        }
+        // Update our internal views by notifying them of resulting [`ChunkStoreEvent`]s.
+        self.times_per_timeline.on_events(update);
+        self.time_histogram_per_timeline.on_events(update);
+        self.query_caches.on_events(update);
+        self.tree.on_store_additions(update);
+
+        // We inform the stats last, since it measures e2e latency.
+        self.stats.on_events(update);
+
+        ChunkStore::on_events(update);
+    }
+
     fn register_entity_path(&mut self, entity_path: &EntityPath) {
         self.entity_path_from_hash
             .entry(entity_path.hash())
@@ -443,7 +488,8 @@ impl EntityDb {
         self.times_per_timeline.on_events(store_events);
         self.query_caches.on_events(store_events);
         self.time_histogram_per_timeline.on_events(store_events);
-        self.tree.on_store_deletions(&self.data_store, store_events);
+        self.tree
+            .on_store_deletions(&*self.data_store, store_events);
     }
 
     /// Key used for sorting recordings in the UI.
@@ -466,6 +512,7 @@ impl EntityDb {
             .store_info_msg()
             .map(|msg| Ok(LogMsg::SetStoreInfo(msg.clone())));
 
+        let store = self.store();
         let data_messages = {
             let time_filter = time_selection.map(|(timeline, range)| {
                 (
@@ -474,8 +521,7 @@ impl EntityDb {
                 )
             });
 
-            let mut chunks: Vec<&Arc<Chunk>> = self
-                .store()
+            let mut chunks: Vec<&Arc<Chunk>> = store
                 .iter_chunks()
                 .filter(move |chunk| {
                     let Some((timeline, time_range)) = time_filter else {
@@ -520,9 +566,10 @@ impl EntityDb {
             itertools::Either::Right(std::iter::empty())
         };
 
+        let data_messages_vec: Vec<_> = data_messages.collect();
         set_store_info_msg
             .into_iter()
-            .chain(data_messages)
+            .chain(data_messages_vec)
             .chain(blueprint_ready)
     }
 

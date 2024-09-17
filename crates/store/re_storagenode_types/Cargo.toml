@@ -1,0 +1,31 @@
+[package]
+name = "re_storagenode_types"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+include.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+re_chunk_store.workspace = true
+re_build_info.workspace = true
+re_log.workspace = true
+re_log_encoding = { workspace = true, features = ["encoder"] }
+re_log_types.workspace = true
+re_string_interner.workspace = true
+crossbeam.workspace = true
+prost = "0.13.2"
+tonic = "=0.12.1"
+tokio.workspace = true
+thiserror.workspace = true
+
+[build-dependencies]
+tonic-build = "=0.12.1"
+
+[lints]
+workspace = true

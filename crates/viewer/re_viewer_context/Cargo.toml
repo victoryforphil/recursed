@@ -31,6 +31,7 @@ re_query.workspace = true
 re_renderer.workspace = true
 re_smart_channel.workspace = true
 re_string_interner.workspace = true
+re_storagenode_types.workspace = true
 re_tracing.workspace = true
 re_types = { workspace = true, features = ["ecolor", "glam", "image"] }
 re_types_core.workspace = true

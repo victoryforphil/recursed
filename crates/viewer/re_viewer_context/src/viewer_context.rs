@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use ahash::HashMap;
 use parking_lot::RwLock;
 
@@ -95,13 +97,13 @@ impl<'a> ViewerContext<'a> {
 
     /// The chunk store of the active recording.
     #[inline]
-    pub fn recording_store(&self) -> &re_chunk_store::ChunkStore {
+    pub fn recording_store(&self) -> &dyn re_chunk_store::ChunkStoreAPI {
         self.store_context.recording.store()
     }
 
     /// The chunk store of the active blueprint.
     #[inline]
-    pub fn blueprint_store(&self) -> &re_chunk_store::ChunkStore {
+    pub fn blueprint_store(&self) -> &dyn re_chunk_store::ChunkStoreAPI {
         self.store_context.blueprint.store()
     }
 

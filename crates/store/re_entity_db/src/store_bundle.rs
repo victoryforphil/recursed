@@ -79,7 +79,7 @@ impl StoreBundle {
     pub fn entry(&mut self, id: &StoreId) -> &mut EntityDb {
         self.entity_dbs.entry(id.clone()).or_insert_with(|| {
             re_log::debug!("Creating new store: {id}");
-            EntityDb::new(id.clone())
+            EntityDb::new_remote(id.clone())
         })
     }
 
@@ -96,7 +96,7 @@ impl StoreBundle {
 
             let mut blueprint_db = EntityDb::new(id.clone());
 
-            re_log::debug!("Creating a new blueprint {id}");
+            re_log::info!("Creating a new blueprint {id}");
 
             blueprint_db.set_store_info(re_log_types::SetStoreInfo {
                 row_id: *re_chunk::RowId::new(),

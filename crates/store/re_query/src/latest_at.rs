@@ -8,7 +8,7 @@ use nohash_hasher::IntMap;
 use parking_lot::RwLock;
 
 use re_chunk::{Chunk, RowId, UnitChunkShared};
-use re_chunk_store::{ChunkStore, LatestAtQuery, TimeInt};
+use re_chunk_store::{ChunkStore, ChunkStoreAPI, LatestAtQuery, TimeInt};
 use re_log_types::EntityPath;
 use re_types_core::{
     components::ClearIsRecursive, Component, ComponentName, Loggable as _, SizeBytes,
@@ -43,7 +43,7 @@ impl Caches {
     /// This is a cached API -- data will be lazily cached upon access.
     pub fn latest_at(
         &self,
-        store: &ChunkStore,
+        store: &dyn ChunkStoreAPI,
         query: &LatestAtQuery,
         entity_path: &EntityPath,
         component_names: impl IntoIterator<Item = ComponentName>,
@@ -622,7 +622,7 @@ impl LatestAtCache {
     /// Queries cached latest-at data for a single component.
     pub fn latest_at(
         &mut self,
-        store: &ChunkStore,
+        store: &dyn ChunkStoreAPI,
         query: &LatestAtQuery,
         entity_path: &EntityPath,
         component_name: ComponentName,

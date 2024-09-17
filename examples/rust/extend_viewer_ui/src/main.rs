@@ -154,7 +154,7 @@ fn component_ui(
     let query = re_chunk_store::LatestAtQuery::latest(timeline);
 
     let results = entity_db.query_caches().latest_at(
-        entity_db.store(),
+        &*entity_db.store(),
         &query,
         entity_path,
         [component_name],

@@ -122,7 +122,7 @@ fn latest_at(
         .filter_map(|&component_name| {
             let mut results =
                 db.query_caches()
-                    .latest_at(db.store(), query, entity_path, [component_name]);
+                    .latest_at(&*db.store(), query, entity_path, [component_name]);
 
             // We ignore components that are unset at this point in time
             results
