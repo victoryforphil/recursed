@@ -1,6 +1,6 @@
 //! The example from our Getting Started page.
 
-use std::f32::consts::TAU;
+use std::{f32::consts::TAU, net::ToSocketAddrs, thread::{self, sleep}, time::Duration};
 
 use itertools::Itertools as _;
 
@@ -13,7 +13,7 @@ const NUM_POINTS: usize = 100;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rec = rerun::RecordingStreamBuilder::new("rerun_example_dna_abacus")
-        .save("/tmp/helix_chunks.rrd")?;
+        .connect_grpc("127.0.0.1:51234".to_socket_addrs().unwrap().next().unwrap())?;
 
     let (points1, colors1) = color_spiral(NUM_POINTS, 2.0, 0.02, 0.0, 0.1);
     let (points2, colors2) = color_spiral(NUM_POINTS, 2.0, 0.02, TAU * 0.5, 0.1);
@@ -84,6 +84,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )),
         )?;
     }
+
+    // needed as we have async sender that we run in a separate thread i.e. no handle to block on
+    sleep(Duration::from_secs(1));
 
     Ok(())
 }

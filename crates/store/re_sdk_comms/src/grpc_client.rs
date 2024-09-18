@@ -1,4 +1,5 @@
-use std::{net::SocketAddr, time::Duration};
+#![allow(clippy::disallowed_methods)]
+use std::{net::SocketAddr, thread, time::Duration};
 
 use crossbeam::channel::{Receiver, Sender};
 use re_log_types::{LogMsg, StoreKind};
@@ -17,35 +18,83 @@ use url::Url;
 #[derive(Debug)]
 pub struct GrpcClient {
     msg_tx: Sender<LogMsg>,
-    pub msg_rx: Receiver<Vec<ChunkStoreEvent>>,
 }
 
 impl GrpcClient {
+    // currently used by the LogSink (GrpcSink) for sending updates to the storage node
     pub fn new(addr: SocketAddr) -> Self {
-        let (stream_tx, stream_rx) = crossbeam::channel::unbounded();
         let (msg_tx, msg_rx) = crossbeam::channel::unbounded();
 
         std::thread::spawn(move || {
-            grpc_sender_receiver(addr, msg_rx, stream_tx);
+            insert_stream(addr, msg_rx);
         });
 
         // here we're both creating a sender that grpc log sink can use to send data to SN
         // and a receiver that can be used to receive updates from SN
-        Self {
-            msg_tx,
-            msg_rx: stream_rx,
-        }
+        Self { msg_tx }
+    }
+
+    // used for viewer to subscribe to remote store updates and react to that accordingly
+    pub fn subscribe_to_updates(addr: SocketAddr) -> Receiver<Vec<ChunkStoreEvent>> {
+        let (event_tx, event_rx) = crossbeam::channel::unbounded();
+
+        let url = Url::parse(&format!("http://{}:{}", addr.ip(), addr.port()))
+            .expect("failed to parse grpc url");
+
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        thread::spawn(move || {
+            let mut updates_stream = rt.block_on(async {
+                let mut client = StorageNodeClient::connect(url.to_string())
+                    .await
+                    .expect("failed to connect to grpc server");
+
+                client
+                    .subscribe_to_updates(SubscribeRequest { subscriber_id: 1 })
+                    .await
+                    .unwrap()
+                    .into_inner()
+            });
+
+            rt.block_on(async move {
+                while let Some(update) = updates_stream.next().await {
+                    match update {
+                        Ok(update) => {
+                            // this whole conversion of chunk store event to data store event is pretty silly...
+                            let cs_update_events = update
+                                .store_events
+                                .into_iter()
+                                .map(|ev| ev.try_into().unwrap())
+                                .collect::<Vec<ChunkStoreEvent>>();
+                            re_log::info!(
+                                "received update from the server, {} events",
+                                cs_update_events.len()
+                            );
+
+                            event_tx
+                                .send(cs_update_events)
+                                .expect("failed to send update to the channel");
+                        }
+                        Err(e) => {
+                            re_log::error!("server replied with an error: {:?}", e);
+                            break;
+                        }
+                    }
+                }
+            });
+        });
+
+        event_rx
     }
 
     pub fn send(&self, log_msg: LogMsg) {
         self.msg_tx.send(log_msg).ok();
     }
 }
-fn grpc_sender_receiver(
-    addr: SocketAddr,
-    msg_rx: Receiver<LogMsg>,
-    updates_tx: Sender<Vec<ChunkStoreEvent>>,
-) {
+fn insert_stream(addr: SocketAddr, msg_rx: Receiver<LogMsg>) {
     let url = Url::parse(&format!("http://{}:{}", addr.ip(), addr.port()))
         .expect("failed to parse grpc url");
 
@@ -58,42 +107,6 @@ fn grpc_sender_receiver(
         StorageNodeClient::connect(url.to_string())
             .await
             .expect("failed to connect to grpc server")
-    });
-
-    // subscribe to data store updates (we won't actually mix insertion with updates subsriptions in actual implementation)
-    let updates_stream = rt.block_on(async {
-        client
-            .subscribe_to_updates(SubscribeRequest { subscriber_id: 1 })
-            .await
-            .expect("failed to subscribe to updates")
-    });
-
-    rt.spawn(async move {
-        let mut updates_stream = updates_stream.into_inner();
-        while let Some(update) = updates_stream.next().await {
-            match update {
-                Ok(update) => {
-                    // this whole conversion of chunk store event to data store event is pretty silly...
-                    let cs_update_events = update
-                        .store_events
-                        .into_iter()
-                        .map(|ev| ev.try_into().unwrap())
-                        .collect::<Vec<ChunkStoreEvent>>();
-                    re_log::info!(
-                        "received update from the server, {} events",
-                        cs_update_events.len()
-                    );
-
-                    updates_tx
-                        .send(cs_update_events)
-                        .expect("failed to send update to the channel");
-                }
-                Err(e) => {
-                    re_log::error!("server replied with an error: {:?}", e);
-                    break;
-                }
-            }
-        }
     });
 
     // stream of insert requests

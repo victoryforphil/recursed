@@ -739,9 +739,6 @@ fn run_impl(
             return Ok(());
         }
     } else {
-        let data_store_client =
-            GrpcClient::new("127.0.0.1:51234".to_socket_addrs().unwrap().next().unwrap());
-
         #[cfg(feature = "native_viewer")]
         return re_viewer::run_native_app(
             Box::new(move |cc| {
@@ -757,7 +754,9 @@ fn run_impl(
                 }
 
                 // subscribe to remote data store update events
-                app.add_data_store_updates_receiver(data_store_client.msg_rx);
+                app.add_data_store_updates_receiver(GrpcClient::subscribe_to_updates(
+                    "127.0.0.1:51234".to_socket_addrs().unwrap().next().unwrap(),
+                ));
 
                 app.set_profiler(profiler);
                 if let Ok(url) = std::env::var("EXAMPLES_MANIFEST_URL") {
