@@ -392,7 +392,7 @@ pub fn help_markdown(egui_ctx: &egui::Context) -> String {
     format!(
         "# 3D view
 
-Display 3D content in the reference frame defined by the space origin.
+Display 3D content in the reference frame defined by the view's  origin.
 
 ## Navigation controls
 
@@ -506,7 +506,7 @@ impl SpatialSpaceView3D {
                 re_renderer::OutlineMaskPreference::NONE,
             );
 
-            // If we are showing the axes for the space, then add the space origin to the bounding box.
+            // If we are showing the axes for the space, then add the origin to the bounding box.
             state.bounding_boxes.current.extend(glam::Vec3::ZERO);
         }
 

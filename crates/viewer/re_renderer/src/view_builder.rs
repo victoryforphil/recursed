@@ -64,7 +64,7 @@ pub type SharedViewBuilder = Arc<RwLock<Option<ViewBuilder>>>;
 /// as well as the coordinate system convention.
 #[derive(Debug, Clone, Copy)]
 pub enum OrthographicCameraMode {
-    /// Puts the view space origin into the middle of the screen.
+    /// Puts the view origin into the middle of the screen.
     ///
     /// Near plane is at z==0, everything with view space z>0 is clipped.
     ///
@@ -73,7 +73,7 @@ pub enum OrthographicCameraMode {
     /// Uses `RUB` (X=Right, Y=Up, Z=Back)
     NearPlaneCenter,
 
-    /// Puts the view space origin at the top-left corner of the orthographic frustum and inverts the y axis,
+    /// Puts the view origin at the top-left corner of the orthographic frustum and inverts the y axis,
     /// such that the bottom-right corner is at `glam::vec3(vertical_world_size * aspect_ratio, vertical_world_size, 0.0)` in view space.
     ///
     /// Near plane is at z==-far_plane_distance, allowing the same z range both negative and positive.

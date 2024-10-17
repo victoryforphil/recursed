@@ -24,6 +24,7 @@ table SpaceViewBlueprint (
     /// I.e. the position of this entity path in space forms the origin of the coordinate system in this space view.
     /// Furthermore, this is the primary indicator for heuristics on what entities we show in this space view.
     space_origin: rerun.blueprint.components.SpaceViewOrigin ("attr.rerun.component_optional", nullable, order: 300);
+    // TODO: changing this would be a breaking change!
 
     /// Whether this space view is visible.
     ///

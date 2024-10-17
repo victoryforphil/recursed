@@ -133,7 +133,7 @@ pub fn help_markdown(egui_ctx: &egui::Context) -> String {
     format!(
         "# 2D View
 
-Display 2D content in the reference frame defined by the space origin.
+Display 2D content in the reference frame defined by the view's origin.
 
 ## Navigation controls
 - Pinch gesture or {zoom_scroll_modifier} + scroll to zoom.

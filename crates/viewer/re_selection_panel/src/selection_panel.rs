@@ -923,7 +923,7 @@ fn list_existing_data_blueprints(
 
 /// Display the top-level properties of a view.
 ///
-/// This includes the name, space origin entity, and view type. These properties are singled
+/// This includes the name, origin entity, and view type. These properties are singled
 /// out as needing to be edited in most case when creating a new view, which is why they are
 /// shown at the very top.
 fn view_top_level_properties(
@@ -942,7 +942,7 @@ fn view_top_level_properties(
         view.set_display_name(ctx, if name.is_empty() { None } else { Some(name) });
     }));
 
-    ui.list_item_flat_noninteractive(PropertyContent::new("Space origin").value_fn(|ui, _| {
+    ui.list_item_flat_noninteractive(PropertyContent::new("Origin").value_fn(|ui, _| {
         ui.spacing_mut().text_edit_width = ui
             .spacing_mut()
             .text_edit_width

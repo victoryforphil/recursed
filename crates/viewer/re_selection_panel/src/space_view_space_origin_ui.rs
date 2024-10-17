@@ -7,7 +7,7 @@ use re_ui::{list_item, SyntaxHighlighting, UiExt as _};
 use re_viewer_context::ViewerContext;
 use re_viewport_blueprint::{default_created_space_views, SpaceViewBlueprint};
 
-/// State of the space origin widget.
+/// State of the origin widget.
 #[derive(Default, Clone)]
 enum SpaceOriginEditState {
     #[default]
@@ -28,7 +28,7 @@ struct EditState {
     selected_suggestion: Option<usize>,
 }
 
-/// Display the space origin of a space view.
+/// Display the origin of a space view.
 pub(crate) fn space_view_space_origin_widget_ui(
     ui: &mut Ui,
     ctx: &ViewerContext<'_>,

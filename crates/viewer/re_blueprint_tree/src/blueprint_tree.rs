@@ -622,7 +622,7 @@ impl BlueprintTree {
 
             if empty_origin {
                 ui.label(ui.ctx().warning_text(
-                    "This space view's query did not match any data under the space origin",
+                    "This space view's query did not match any data under the origin",
                 ));
             }
         });
