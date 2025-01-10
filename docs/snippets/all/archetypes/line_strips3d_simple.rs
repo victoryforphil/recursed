@@ -15,5 +15,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
     rec.log("strip", &rerun::LineStrips3D::new([points]))?;
 
+    rec.log(
+        "strip",
+        &rerun::LineStrips3D::update_fields().with_radii([2.0]),
+    )?;
+
     Ok(())
 }
